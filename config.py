@@ -1,0 +1,35 @@
+import os
+
+class Config:
+    def __init__(self):
+        self.bot_token = os.getenv("TELEGRAM_API")
+        self.download_directory = os.getenv("DOWNLOAD_FOLDER")
+        self.storage_directory = os.path.join(self.download_directory, "from_telegram_loader")
+
+        os.makedirs(self.download_directory, exist_ok=True)
+        os.makedirs(self.storage_directory, exist_ok=True)
+
+        self.directories = {
+            "photo": os.path.join(self.storage_directory, "photos"),
+            "audio": os.path.join(self.storage_directory, "audio"),
+            "voice": os.path.join(self.storage_directory, "voice"),
+            "video": os.path.join(self.storage_directory, "videos"),
+            "animation": os.path.join(self.storage_directory, "animations"),
+            "sticker": os.path.join(self.storage_directory, "stickers"),
+            "document": os.path.join(self.storage_directory, "documents"),
+            "doc_photo": os.path.join(self.storage_directory, "Doc_Photos"),
+            "torrent": os.path.join(self.download_directory, "torrents")
+        }
+        self.extensions = {
+            "photo": ".jpg",
+            "audio": ".mp3",
+            "voice": ".ogg",
+            "video": ".mp4",
+            "animation": ".gif",
+            "sticker": ".webp",
+            "document": ".pdf",
+            "doc_photo": ".jpg",
+            "torrent": ".torrent",
+        }
+        for folder in self.directories.values():
+            os.makedirs(folder, exist_ok=True)
