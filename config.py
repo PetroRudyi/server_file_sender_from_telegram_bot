@@ -1,10 +1,13 @@
 import os
+import json
 
 class Config:
     def __init__(self):
-        self.bot_token = os.getenv("TELEGRAM_API")
-        self.download_directory = os.getenv("DOWNLOAD_FOLDER")
+        self.bot_token = os.getenv("TELEGRAM_API", 'telegram_api_example')
+        self.download_directory = os.getenv("DOWNLOAD_FOLDER", '/Download')
         self.storage_directory = os.path.join(self.download_directory, "from_telegram_loader")
+
+        self.white_users_list = json.loads(os.getenv("WHITE_USERS_LIST", '[]'))
 
         os.makedirs(self.download_directory, exist_ok=True)
         os.makedirs(self.storage_directory, exist_ok=True)

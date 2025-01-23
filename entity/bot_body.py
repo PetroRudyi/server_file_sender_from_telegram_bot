@@ -12,14 +12,16 @@ class LoaderBot:
         self.file_manager = FileManager(config, logger)
         self.application = ApplicationBuilder().token(config.bot_token).build()
 
-        self.application.add_handler(CommandHandler("start", self.start))
-        self.application.add_handler(MessageHandler(filters.PHOTO, self.handle_photo))
-        self.application.add_handler(MessageHandler(filters.AUDIO, self.handle_audio))
-        self.application.add_handler(MessageHandler(filters.VOICE, self.handle_voice))
-        self.application.add_handler(MessageHandler(filters.VIDEO, self.handle_video))
-        self.application.add_handler(MessageHandler(filters.ANIMATION, self.handle_animation))
-        self.application.add_handler(MessageHandler(filters.Sticker.ALL, self.handle_sticker))
-        self.application.add_handler(MessageHandler(filters.Document.ALL, self.handle_document))
+        self.white_user_filter = filters.User(user_id=config.white_users_list)
+
+        self.application.add_handler(CommandHandler("start", self.start, filters=self.white_user_filter))
+        self.application.add_handler(MessageHandler(self.white_user_filter & filters.PHOTO, self.handle_photo))
+        self.application.add_handler(MessageHandler(self.white_user_filter & filters.AUDIO, self.handle_audio))
+        self.application.add_handler(MessageHandler(self.white_user_filter & filters.VOICE, self.handle_voice))
+        self.application.add_handler(MessageHandler(self.white_user_filter & filters.VIDEO, self.handle_video))
+        self.application.add_handler(MessageHandler(self.white_user_filter & filters.ANIMATION, self.handle_animation))
+        self.application.add_handler(MessageHandler(self.white_user_filter & filters.Sticker.ALL, self.handle_sticker))
+        self.application.add_handler(MessageHandler(self.white_user_filter & filters.Document.ALL, self.handle_document))
 
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):

@@ -7,8 +7,9 @@ LABEL image_name="telegram-logger-truenas"
 # Встановлюємо робочу директорію
 WORKDIR /app
 
-ENV TELEGRAM_API="HERE_TELEGRAM_BOT_API_TOKEN"
+ENV TELEGRAM_API="${HERE_TELEGRAM_BOT_API_TOKEN}"
 ENV DOWNLOAD_FOLDER="/Download"
+ENV WHITE_USERS_LIST="[0000000,11111111]"
 
 # Копіюємо файл програми
 COPY . .
