@@ -1,4 +1,9 @@
 import logging
+import os
+import pandas as pd
+from datetime import datetime
+from datetime import time, timezone, timedelta
+
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
@@ -14,6 +19,7 @@ class LoaderBot:
 
         self.white_user_filter = filters.User(user_id=config.white_users_list)
 
+        self.application.job_queue.start()
         self.application.add_handler(CommandHandler("start", self.start, filters=self.white_user_filter))
         self.application.add_handler(MessageHandler(self.white_user_filter & filters.PHOTO, self.handle_photo))
         self.application.add_handler(MessageHandler(self.white_user_filter & filters.AUDIO, self.handle_audio))
@@ -23,6 +29,14 @@ class LoaderBot:
         self.application.add_handler(MessageHandler(self.white_user_filter & filters.Sticker.ALL, self.handle_sticker))
         self.application.add_handler(MessageHandler(self.white_user_filter & filters.Document.ALL, self.handle_document))
 
+        self.application.add_handler(CommandHandler("feed", self.handle_event, filters=self.white_user_filter))
+        self.application.add_handler(CommandHandler("sleep", self.handle_event, filters=self.white_user_filter))
+        self.application.add_handler(CommandHandler("play", self.handle_event, filters=self.white_user_filter))
+        self.application.add_handler(CommandHandler("pepe", self.handle_event, filters=self.white_user_filter))
+        self.application.add_handler(CommandHandler("shit", self.handle_event, filters=self.white_user_filter))
+
+
+        self.schedule_daily_report()
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Hello! Send me any media, and I'll save it.")
@@ -84,6 +98,55 @@ class LoaderBot:
 
         await context.bot.send_message(chat_id=context._chat_id, text=f"Your {media_type} has been saved.")
 
+    async def handle_event(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        message_text = update.message.text
+        command, *details = message_text.split(" ", 1)
+
+        if not details:
+            await update.message.reply_text("Формат: /feed опис події")
+            return
+
+        event_type = command.lstrip('/')
+        note = details[0].strip()
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        file_path_saving = self.config.directories.get('sirko_logs', os.path.join(self.config.storage_directory, "others"))
+        file_path = os.path.join(file_path_saving, 'sirko_logs.csv')
+        if os.path.exists(file_path):
+            df = pd.read_csv(file_path)
+        else:
+            df = pd.DataFrame(columns=["date", "situation_type", "note"])
+
+        print(file_path)
+
+        new_entry = pd.DataFrame([[timestamp, event_type, note]], columns=["date", "situation_type", "note"])
+        df = pd.concat([df, new_entry], ignore_index=True)
+        df.to_csv(file_path, index=False)
+
+        await update.message.reply_text(f"Запис збережено: {event_type} - {note}")
+        self.logger.info("Збережено запис: %s, %s", event_type, note)
+
+    def schedule_daily_report(self):
+
+        file_path_saving = self.config.directories.get('sirko_logs',
+                                                       os.path.join(self.config.storage_directory, "others"))
+        file_path = os.path.join(file_path_saving, 'sirko_logs.csv')
+
+        async def send_csv(context: ContextTypes.DEFAULT_TYPE):
+
+            print('start sending csv')
+            chat_id = context.job.chat_id
+            if os.path.exists(file_path):
+                await context.bot.send_document(chat_id, document=open(file_path, "rb"))
+                os.remove(file_path)
+            else:
+                await context.bot.send_message(chat_id, "Файл подій відсутній.")
+
+        self.application.job_queue.run_daily(send_csv,
+                                             time(hour=0, minute=0, second=0, tzinfo=timezone(timedelta(hours=2))),
+                                             chat_id=216757486)
+        self.application.job_queue.start()
     def run(self):
         self.logger.info("Bot started. Running polling.")
         self.application.run_polling()
