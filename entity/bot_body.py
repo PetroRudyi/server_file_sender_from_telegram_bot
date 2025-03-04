@@ -139,7 +139,6 @@ class LoaderBot:
             chat_id = context.job.chat_id
             if os.path.exists(file_path):
                 await context.bot.send_document(chat_id, document=open(file_path, "rb"))
-                os.remove(file_path)
             else:
                 await context.bot.send_message(chat_id, "Файл подій відсутній.")
 
